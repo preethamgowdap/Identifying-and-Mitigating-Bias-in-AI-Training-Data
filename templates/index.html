@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>Bias Detection Dashboard</title>
+    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #282c36; color: white; }
+        .container { width: 70%; margin: auto; padding: 20px; }
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .box { padding: 20px; background-color: #4caf50; border-radius: 8px; font-weight: bold; font-size: 1.2em; }
+        input, button { margin: 10px; padding: 10px; width: 80%; }
+        button { background-color: #ff9800; border: none; cursor: pointer; }
+        button:hover { background-color: #e68900; }
+        canvas { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class=\"container\">
+        <h2>Bias Detection Dashboard</h2>
+        <div class=\"grid-container\">
+            <div class=\"box" id="accuracy">Accuracy: --%</div>
+            <div class=\"box" id="precision">Precision: --%</div>
+            <div class=\"box" id="recall">Recall: --%</div>
+        </div>
+        <br>
+        <label>Enter Features:</label><br>
+        <input type="text" id="age" placeholder="Age">
+        <input type="text" id="education" placeholder="Education">
+        <input type="text" id="income" placeholder="Income Level">
+        <button onclick="checkBias()">Check Bias</button>
+        <h3 id="result"></h3>
+        <canvas id="biasChart" width="400" height="400"></canvas>
+    </div>
+    <script>
+        function checkBias() {
+            let inputData = {
+                age: document.getElementById("age").value,
+                education: document.getElementById("education").value,
+                income: document.getElementById("income").value
+            };
+            fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(inputData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("result").innerText = "Bias Score: " + data.bias_score + " | Fairness Status: " + data.fairness_status;
+                document.getElementById("accuracy").innerText = "Accuracy: " + data.accuracy + "%";
+                document.getElementById("precision").innerText = "Precision: " + data.precision + "%";
+                document.getElementById("recall").innerText = "Recall: " + data.recall + "%";
+                updateChart(data.bias_score);
+            });
+        }
+
+        function updateChart(biasScore) {
+            const ctx = document.getElementById('biasChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Bias Score', 'Remaining'],
+                    datasets: [{
+                        data: [biasScore, 1 - biasScore],
+                        backgroundColor: ['red', 'green']
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>
